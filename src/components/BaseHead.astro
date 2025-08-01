@@ -25,6 +25,76 @@ const { title, description, image = FallbackImage } = Astro.props;
 <!-- Global CSS -->
 <link rel="stylesheet" href="/src/styles/global.css" />
 
+<!-- CSS crítico inline para fuentes -->
+<style>
+	/* CSS crítico para evitar FOIT - se carga inmediatamente */
+	h1, h2.site-title, h2.site-title a, h4.post-title, .title.post-title {
+		font-family: Georgia, 'Times New Roman', Times, serif;
+		font-weight: 700;
+		font-display: swap;
+	}
+	
+	/* Cuando Lora se carga, reemplaza el fallback */
+	.fonts-loaded h1, 
+	.fonts-loaded h2.site-title, 
+	.fonts-loaded h2.site-title a, 
+	.fonts-loaded h4.post-title, 
+	.fonts-loaded .title.post-title {
+		font-family: 'Lora', Georgia, 'Times New Roman', Times, serif;
+	}
+</style>
+
+<!-- Google Fonts Optimizadas -->
+<!-- Preconectar a los dominios de Google Fonts lo antes posible -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<!-- Precargar la fuente crítica Lora -->
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,700;1,700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+
+<!-- Fallback para navegadores que no soportan preload -->
+<noscript>
+	<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
+</noscript>
+
+<!-- Script optimizado para cargar fuentes de forma asíncrona -->
+<script is:inline>
+	// Función para cargar fuentes de forma asíncrona y no bloqueante
+	function loadGoogleFonts() {
+		// Verificar si las fuentes ya están cargadas
+		if (document.querySelector('link[href*="fonts.googleapis.com"]')) {
+			return;
+		}
+		
+		const link = document.createElement('link');
+		link.href = 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,700;1,700&display=swap';
+		link.rel = 'stylesheet';
+		link.media = 'print';
+		link.onload = function() {
+			this.media = 'all';
+			// Añadir clase cuando las fuentes están cargadas
+			document.documentElement.classList.add('fonts-loaded');
+		};
+		link.onerror = function() {
+			// Si falla la carga, mantener el fallback
+			console.warn('Failed to load Google Fonts, using fallback');
+		};
+		document.head.appendChild(link);
+	}
+	
+	// Cargar fuentes después del primer renderizado
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', loadGoogleFonts);
+	} else {
+		// Si el DOM ya está listo, usar requestIdleCallback para no bloquear
+		if ('requestIdleCallback' in window) {
+			requestIdleCallback(loadGoogleFonts);
+		} else {
+			setTimeout(loadGoogleFonts, 1);
+		}
+	}
+</script>
+
 <!-- Script para aplicar tema inmediatamente -->
 <script is:inline>
 	// Función para aplicar tema
@@ -53,19 +123,6 @@ const { title, description, image = FallbackImage } = Astro.props;
 	// Aplicar tema después de cada navegación
 	document.addEventListener('astro:after-swap', applyStoredTheme);
 </script>
-
-<!-- Google Fonts -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
-<link rel="sitemap" href="/sitemap-index.xml" />
-<link
-	rel="alternate"
-	type="application/rss+xml"
-	title={SITE_TITLE}
-	href={new URL('rss.xml', Astro.site)}
-/>
-<meta name="generator" content={Astro.generator} />
 
 <!-- Font preloads -->
 <link rel="preload" href="/fonts/atkinson-regular.woff" as="font" type="font/woff" crossorigin />
